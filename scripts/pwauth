@@ -19,7 +19,7 @@ do
     sudo usermod -a -G ${GROUP_TO_ADD} ${USER_NAME}
     FOUND="YES"
   fi
-done < <(LDAPTLS_REQCERT=never /usr/bin/ldapsearch -D cn=${USER_NAME},dc=cisco,dc=com -H ldaps://${LDAP_HOST}:636 -w ${PASSWORD} -b dc=cisco,dc=com cn=${USER_NAME} 2>&1)
+done < <(LDAPTLS_REQCERT=never /usr/bin/ldapsearch -D cn=${USER_NAME},dc=cisco,dc=com -H ldaps://ds.cisco.com:3268 -w ${PASSWORD} -b dc=cisco,dc=com cn=${USER_NAME} 2>&1)
 
 if [ $FOUND == "YES" ]; then
   exit 0
