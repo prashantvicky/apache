@@ -1,0 +1,29 @@
+#!/bin/bash
+# Copyright (c) 2016 Cisco Systems, Inc.
+# this is a replacement for pwauth that links into the LDAP service running on
+# the orchestrator
+
+read USER_NAME
+read PASSWORD
+
+source /auth_host
+
+FOUND="NO"
+sudo userdel ${USER_NAME} 2>&1
+sudo useradd --no-user-group ${USER_NAME} 2>&1
+while read -r LINE
+do
+  if [[ $LINE == *"memberOf"* ]]; then
+    GROUP_TO_ADD=`echo "$LINE" | cut -f 2 -d : | tr -s ' ' | cut -f 2 -d ' ' |  tr '[:upper:]' '[:lower:]'`
+    sudo groupadd ${GROUP_TO_ADD}
+    sudo usermod -a -G ${GROUP_TO_ADD} ${USER_NAME}
+    FOUND="YES"
+  fi
+done < <(LDAPTLS_REQCERT=never /usr/bin/ldapsearch -D cn=${USER_NAME},dc=cisco,dc=com -H ldaps://${LDAP_HOST}:636 -w ${PASSWORD} -b dc=cisco,dc=com cn=${USER_NAME} 2>&1)
+
+if [ $FOUND == "YES" ]; then
+  exit 0
+else
+  sudo userdel ${USER_NAME} 2>&1
+  exit 1
+fi
